@@ -23,22 +23,20 @@ fn solve_part_a(input: &Vec<String>) -> i32 {
 
 fn solve_part_b(input: &Vec<String>) -> i32 {
     let re = Regex::new(r"mul\((?<x>[\d]+),(?<y>[\d]+)\)").unwrap();
-    let line = input.join("");
+    let mut line = input.join("");
 
     let mut dos: Vec<&str> = line.split("do()").collect::<Vec<&str>>();
     dos.iter_mut().for_each(|s| match s.find("don't()") {
         Some(pos) => *s = &s[..pos],
         None => (),
     });
-    dos.iter()
-        .map(|seg| {
-            re.captures_iter(seg)
-                .map(|mul| {
-                    let x = mul.name("x").unwrap().as_str().parse::<i32>().unwrap();
-                    let y = mul.name("y").unwrap().as_str().parse::<i32>().unwrap();
-                    x * y
-                })
-                .sum::<i32>()
+    line = dos.join("");
+
+    re.captures_iter(&line)
+        .map(|mul| {
+            let x = mul.name("x").unwrap().as_str().parse::<i32>().unwrap();
+            let y = mul.name("y").unwrap().as_str().parse::<i32>().unwrap();
+            x * y
         })
         .sum::<i32>()
 }
