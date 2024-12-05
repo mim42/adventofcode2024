@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, ops::Index};
+use std::{cmp::Ordering, fs::read_to_string, ops::Index};
 
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
@@ -8,7 +8,7 @@ fn read_lines(filename: &str) -> Vec<String> {
     result
 }
 
-fn solve_part_a(input: &Vec<String>) -> i32 {
+fn parse_input(input: &Vec<String>) -> (Vec<(i32, i32)>, Vec<Vec<i32>>) {
     let mut rules: Vec<(i32, i32)> = Vec::new();
     let mut updates: Vec<Vec<i32>> = Vec::new();
     let mut rules_flag = true;
@@ -31,31 +31,55 @@ fn solve_part_a(input: &Vec<String>) -> i32 {
             updates.push(update);
         }
     }
+    (rules, updates)
+}
 
-    let mut counter = 0;
-    for update in updates {
-        if !rules.iter().any(|(first, second)| {
-            let mut first_index = -1;
-            let mut second_index = -1;
+fn correct_ord(rules: &Vec<(i32, i32)>, update: &Vec<i32>) -> bool {
+    !rules.iter().any(|(first, second)| {
+        let mut first_index = -1;
+        let mut second_index = -1;
 
-            for (i, num) in update.iter().enumerate() {
-                if first == num {
-                    first_index = i as i32;
-                } else if second == num {
-                    second_index = i as i32;
-                }
+        for (i, num) in update.iter().enumerate() {
+            if first == num {
+                first_index = i as i32;
+            } else if second == num {
+                second_index = i as i32;
             }
-            first_index > second_index && first_index != -1 && second_index != -1
-        }) {
-            counter += update[update.len() / 2];
         }
-    }
+        first_index > second_index && first_index != -1 && second_index != -1
+    })
+}
 
+fn solve_part_a(input: &Vec<String>) -> i32 {
+    let (rules, updates) = parse_input(input);
+    let mut counter = 0;
+    updates
+        .iter()
+        .filter(|update| correct_ord(&rules, &update))
+        .for_each(|update| counter += update[update.len() / 2]);
     counter
 }
 
 fn solve_part_b(input: &Vec<String>) -> i32 {
-    todo!()
+    let (rules, mut updates) = parse_input(input);
+
+    let mut counter = 0;
+    updates
+        .iter_mut()
+        .filter(|update| !correct_ord(&rules, &update))
+        .for_each(|update| {
+            update.sort_by(|a, b| {
+                if rules.contains(&(*a, *b)) {
+                    return Ordering::Less;
+                } else if rules.contains(&(*b, *a)) {
+                    return Ordering::Greater;
+                }
+                return Ordering::Equal;
+            });
+            counter += update[update.len() / 2];
+        });
+
+    counter
 }
 
 fn main() {
@@ -78,6 +102,6 @@ mod tests {
     #[test]
     fn check_part_b_example() {
         let example: Vec<String> = read_lines("./inputs/example-b.txt");
-        assert_eq!(9, solve_part_b(&example));
+        assert_eq!(123, solve_part_b(&example));
     }
 }
