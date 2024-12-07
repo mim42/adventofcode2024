@@ -29,7 +29,7 @@ fn find_guard(matrix: &Vec<Vec<String>>) -> (usize, usize) {
     position
 }
 
-fn solve_part_a(input: &Vec<String>) -> i32 {
+fn find_all_paths(input: &Vec<String>) -> HashSet<(usize, usize)> {
     let mut matrix = parse_input(input);
     let start_position = find_guard(&matrix);
     matrix[start_position.0 as usize][start_position.1 as usize] = ".".to_string();
@@ -60,60 +60,63 @@ fn solve_part_a(input: &Vec<String>) -> i32 {
             all_positions.insert(current_pos);
         }
     }
+    all_positions
+}
 
+fn solve_part_a(input: &Vec<String>) -> i32 {
+    let all_positions = find_all_paths(input);
     all_positions.len() as i32
 }
 
 fn solve_part_b(input: &Vec<String>) -> i32 {
     let mut matrix = parse_input(input);
     let start_position = find_guard(&matrix);
+    let all_positions = find_all_paths(input);
 
     let mut counter = 0;
     matrix[start_position.0][start_position.1] = ".".to_string();
 
-    for i in 0..matrix.len() {
-        for j in 0..matrix[0].len() {
-            if i == start_position.0 && j == start_position.1 {
-                continue;
-            }
-            if matrix[i][j] == "#" {
-                continue;
-            }
-            matrix[i][j] = "#".to_string();
-            let mut all_positions: HashSet<((usize, usize), usize)> = HashSet::new();
-            all_positions.insert((start_position, 0));
-            let mut direction = 0;
-            let operations = [(-1, 0), (0, 1), (1, 0), (0, -1)];
-            let mut current_pos = start_position;
-            loop {
-                direction = direction % 4;
-                let op = operations[direction];
-                let next_position_x = current_pos.0 as i32 + op.0;
-                let next_position_y = current_pos.1 as i32 + op.1;
+    for (i, j) in all_positions {
+        if i == start_position.0 && j == start_position.1 {
+            continue;
+        }
+        if matrix[i][j] == "#" {
+            continue;
+        }
+        matrix[i][j] = "#".to_string();
+        let mut all_positions: HashSet<((usize, usize), usize)> = HashSet::new();
+        all_positions.insert((start_position, 0));
+        let mut direction = 0;
+        let operations = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+        let mut current_pos = start_position;
+        loop {
+            direction = direction % 4;
+            let op = operations[direction];
+            let next_position_x = current_pos.0 as i32 + op.0;
+            let next_position_y = current_pos.1 as i32 + op.1;
 
-                if next_position_x < 0
-                    || next_position_x >= matrix.len() as i32
-                    || next_position_y < 0
-                    || next_position_y >= matrix.len() as i32
-                {
+            if next_position_x < 0
+                || next_position_x >= matrix.len() as i32
+                || next_position_y < 0
+                || next_position_y >= matrix.len() as i32
+            {
+                break;
+            }
+            let next_position_x = next_position_x as usize;
+            let next_position_y = next_position_y as usize;
+            if matrix[next_position_x][next_position_y] == "#" {
+                direction += 1;
+            } else {
+                current_pos = (next_position_x, next_position_y);
+
+                if all_positions.contains(&(current_pos, direction)) {
+                    counter += 1;
                     break;
                 }
-                let next_position_x = next_position_x as usize;
-                let next_position_y = next_position_y as usize;
-                if matrix[next_position_x][next_position_y] == "#" {
-                    direction += 1;
-                } else {
-                    current_pos = (next_position_x, next_position_y);
-
-                    if all_positions.contains(&(current_pos, direction)) {
-                        counter += 1;
-                        break;
-                    }
-                    all_positions.insert((current_pos, direction));
-                }
+                all_positions.insert((current_pos, direction));
             }
-            matrix[i][j] = ".".to_string();
         }
+        matrix[i][j] = ".".to_string();
     }
 
     counter

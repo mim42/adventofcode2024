@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs::read_to_string};
+use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
@@ -8,82 +8,75 @@ fn read_lines(filename: &str) -> Vec<String> {
     result
 }
 
-fn parse_input(input: &Vec<String>) -> Vec<(u64, VecDeque<u64>)> {
-    let mut parsed_input: Vec<(u64, VecDeque<u64>)> = Vec::new();
+fn parse_input(input: &Vec<String>) -> Vec<(u64, Vec<u64>)> {
+    let mut parsed_input: Vec<(u64, Vec<u64>)> = Vec::new();
     for line in input {
         let splited: Vec<&str> = line.split(": ").collect();
         let result = splited[0].parse::<u64>().unwrap();
         let nums = splited[1]
             .split(" ")
             .map(|c| c.parse::<u64>().unwrap())
-            .collect::<VecDeque<u64>>();
+            .collect::<Vec<u64>>();
         parsed_input.push((result, nums));
     }
     parsed_input
 }
 
-fn check_valid_a(equation: u64, nums: VecDeque<u64>) -> bool {
+fn check_valid_a(equation: u64, nums: &[u64], result: u64) -> bool {
     let operations = ["+", "*"];
-    if nums.len() == 1 {
-        return equation == nums[0];
+    if nums.is_empty() {
+        return equation == result;
     }
     operations.iter().any(|op| {
-        let mut temp_nums = nums.clone();
-        let first = temp_nums.pop_front().unwrap();
-        let second = temp_nums.pop_front().unwrap();
-        let mut result = 0;
-
+        let first = nums[0];
+        let mut next_result = 0;
         if op == &"+" {
-            result = first + second;
+            next_result = first + result;
         } else {
-            result = first * second;
+            next_result = first * result;
         }
-        temp_nums.insert(0, result);
-        check_valid_a(equation, temp_nums)
+        check_valid_a(equation, &nums[1..], next_result)
     })
 }
 
 fn solve_part_a(input: &Vec<String>) -> u64 {
-    let equations: Vec<(u64, VecDeque<u64>)> = parse_input(input);
+    let equations: Vec<(u64, Vec<u64>)> = parse_input(input);
     let mut result = 0;
     for (equation, nums) in equations {
-        if check_valid_a(equation, nums) {
+        if check_valid_a(equation, &nums, 0) {
             result += equation;
         }
     }
     result
 }
 
-fn check_valid_b(equation: u64, nums: VecDeque<u64>) -> bool {
+fn check_valid_b(equation: u64, nums: &[u64], result: u64) -> bool {
     let operations = ["+", "*", "||"];
-    if nums.len() == 1 {
-        return equation == nums[0];
+    if nums.is_empty() {
+        return equation == result;
     }
     operations.iter().any(|op| {
-        let mut temp_nums = nums.clone();
-        let first = temp_nums.pop_front().unwrap();
-        let second = temp_nums.pop_front().unwrap();
-        let mut result = 0;
+        let first = nums[0];
+        let mut next_result = 0;
 
         if op == &"+" {
-            result = first + second;
+            next_result = first + result;
         } else if op == &"*" {
-            result = first * second;
+            next_result = first * result;
         } else {
-            result = (first.to_string() + &second.to_string())
+            next_result = (result.to_string() + &first.to_string())
                 .parse::<u64>()
                 .unwrap();
         }
-        temp_nums.insert(0, result);
-        check_valid_b(equation, temp_nums)
+        check_valid_b(equation, &nums[1..], next_result)
     })
 }
 
 fn solve_part_b(input: &Vec<String>) -> u64 {
-    let equations: Vec<(u64, VecDeque<u64>)> = parse_input(input);
+    let equations: Vec<(u64, Vec<u64>)> = parse_input(input);
     let mut result = 0;
     for (equation, nums) in equations {
-        if check_valid_b(equation, nums) {
+        if check_valid_b(equation, &nums, 0) {
             result += equation;
         }
     }
