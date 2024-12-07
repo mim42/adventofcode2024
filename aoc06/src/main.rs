@@ -1,4 +1,6 @@
-use std::{collections::HashSet, fs::read_to_string};
+use std::fs::read_to_string;
+extern crate fxhash;
+use fxhash::FxHashSet;
 
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
@@ -29,11 +31,11 @@ fn find_guard(matrix: &Vec<Vec<String>>) -> (usize, usize) {
     position
 }
 
-fn find_all_paths(input: &Vec<String>) -> HashSet<(usize, usize)> {
+fn find_all_paths(input: &Vec<String>) -> FxHashSet<(usize, usize)> {
     let mut matrix = parse_input(input);
     let start_position = find_guard(&matrix);
     matrix[start_position.0 as usize][start_position.1 as usize] = ".".to_string();
-    let mut all_positions: HashSet<(usize, usize)> = HashSet::new();
+    let mut all_positions: FxHashSet<(usize, usize)> = FxHashSet::default();
 
     all_positions.insert(start_position);
     let mut direction = 0;
@@ -71,12 +73,12 @@ fn solve_part_a(input: &Vec<String>) -> i32 {
 fn solve_part_b(input: &Vec<String>) -> i32 {
     let mut matrix = parse_input(input);
     let start_position = find_guard(&matrix);
-    let all_positions = find_all_paths(input);
+    let all_block_positions = find_all_paths(input);
 
     let mut counter = 0;
     matrix[start_position.0][start_position.1] = ".".to_string();
 
-    for (i, j) in all_positions {
+    for (i, j) in all_block_positions {
         if i == start_position.0 && j == start_position.1 {
             continue;
         }
@@ -84,7 +86,7 @@ fn solve_part_b(input: &Vec<String>) -> i32 {
             continue;
         }
         matrix[i][j] = "#".to_string();
-        let mut all_positions: HashSet<((usize, usize), usize)> = HashSet::new();
+        let mut all_positions: FxHashSet<((usize, usize), usize)> = FxHashSet::default();
         all_positions.insert((start_position, 0));
         let mut direction = 0;
         let operations = [(-1, 0), (0, 1), (1, 0), (0, -1)];
