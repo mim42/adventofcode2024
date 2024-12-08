@@ -24,7 +24,7 @@ fn parse_input(input: &Vec<String>) -> Vec<(u64, Vec<u64>)> {
 
 fn check_valid_a(equation: u64, nums: &[u64], result: u64) -> bool {
     let operations = ["+", "*"];
-    if nums.is_empty() {
+    if nums.is_empty() || result > equation {
         return equation == result;
     }
     operations.iter().any(|op| {
@@ -52,7 +52,7 @@ fn solve_part_a(input: &Vec<String>) -> u64 {
 
 fn check_valid_b(equation: u64, nums: &[u64], result: u64) -> bool {
     let operations = ["+", "*", "||"];
-    if nums.is_empty() {
+    if nums.is_empty() || result > equation {
         return equation == result;
     }
     operations.iter().any(|op| {
