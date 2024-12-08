@@ -72,7 +72,7 @@ fn possible_coords_b(
 ) -> Vec<(usize, usize)> {
     let mut result: Vec<(usize, usize)> = Vec::new();
 
-    if coords.len() > 2 {
+    if coords.len() > 1 {
         result = coords.to_vec();
     }
     for (i, first_coord) in coords.iter().enumerate() {
