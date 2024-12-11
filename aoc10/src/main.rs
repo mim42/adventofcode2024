@@ -31,17 +31,18 @@ fn find_trailheads(map: &Vec<Vec<usize>>) -> Vec<(usize, usize)> {
     trailheads
 }
 
-fn find_trail_a(
+fn find_trail(
     map: &Vec<Vec<usize>>,
     current_point: (usize, usize),
     peaks: &mut HashSet<(usize, usize)>,
-) {
+) -> usize {
     let num = map[current_point.0][current_point.1];
     if num == 9 {
         peaks.insert(current_point);
+        return 1;
     }
+    let mut different_paths = 0;
     let ops = [(0, 1), (1, 0), (-1, 0), (0, -1)];
-
     for op in ops {
         let next_point_x = current_point.0 as i64 + op.0;
         let next_point_y = current_point.1 as i64 + op.1;
@@ -51,10 +52,12 @@ fn find_trail_a(
             && next_point_y < map[0].len() as i64
         {
             if num + 1 == map[next_point_x as usize][next_point_y as usize] {
-                find_trail_a(map, (next_point_x as usize, next_point_y as usize), peaks);
+                different_paths +=
+                    find_trail(map, (next_point_x as usize, next_point_y as usize), peaks);
             }
         }
     }
+    return different_paths;
 }
 
 fn solve_part_a(input: &Vec<String>) -> usize {
@@ -64,54 +67,20 @@ fn solve_part_a(input: &Vec<String>) -> usize {
     let mut sum = 0;
     for point in trailheads {
         let mut peaks: HashSet<(usize, usize)> = HashSet::new();
-        find_trail_a(&map, point, &mut peaks);
+        find_trail(&map, point, &mut peaks);
         sum += peaks.len();
     }
     sum
 }
 
-fn find_trail_b(
-    map: &Vec<Vec<usize>>,
-    current_point: (usize, usize),
-    path: Vec<(usize, usize)>,
-    peaks: &mut HashSet<Vec<(usize, usize)>>,
-) {
-    let num = map[current_point.0][current_point.1];
-    if num == 9 {
-        peaks.insert(path.clone());
-    }
-    let ops = [(0, 1), (1, 0), (-1, 0), (0, -1)];
-
-    for op in ops {
-        let next_point_x = current_point.0 as i64 + op.0;
-        let next_point_y = current_point.1 as i64 + op.1;
-        if next_point_x >= 0
-            && next_point_x < map.len() as i64
-            && next_point_y >= 0
-            && next_point_y < map[0].len() as i64
-        {
-            if num + 1 == map[next_point_x as usize][next_point_y as usize] {
-                let mut next_path = path.clone();
-                next_path.push((next_point_x as usize, next_point_y as usize));
-                find_trail_b(
-                    map,
-                    (next_point_x as usize, next_point_y as usize),
-                    next_path,
-                    peaks,
-                );
-            }
-        }
-    }
-}
 fn solve_part_b(input: &Vec<String>) -> usize {
     let map = parse_input(input);
 
     let trailheads = find_trailheads(&map);
     let mut sum = 0;
     for point in trailheads {
-        let mut peaks: HashSet<Vec<(usize, usize)>> = HashSet::new();
-        find_trail_b(&map, point, vec![], &mut peaks);
-        sum += peaks.len();
+        let mut peaks: HashSet<(usize, usize)> = HashSet::new();
+        sum += find_trail(&map, point, &mut peaks);
     }
     sum
 }
