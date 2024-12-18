@@ -1,4 +1,5 @@
 use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -48,7 +49,7 @@ fn find_shortest(
     end: (usize, usize),
     limit: usize,
 ) -> usize {
-    let mut q = std::collections::BinaryHeap::new();
+    let mut q = BinaryHeap::new();
     let mut processed = vec![false; limit * limit];
     let mut distance = vec![usize::MAX; limit * limit];
     let start = start.0 * limit + start.1;
