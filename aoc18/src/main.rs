@@ -1,5 +1,6 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+extern crate fxhash;
+use fxhash::FxHashMap;
+use fxhash::FxHashSet;
 use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -51,8 +52,8 @@ fn find_shortest(
     end: (usize, usize),
     limit: usize,
 ) -> usize {
-    let mut visited: HashSet<(usize, usize)> = HashSet::new();
-    let mut distances: HashMap<(usize, usize), usize> = HashMap::new();
+    let mut visited: FxHashSet<(usize, usize)> = FxHashSet::default();
+    let mut distances: FxHashMap<(usize, usize), usize> = FxHashMap::default();
     distances.insert(start, 0);
     let mut queue = Vec::new();
     let start = start.clone();
@@ -101,7 +102,6 @@ fn solve_part_a(input: &Vec<String>, limit: usize, bytes: usize) -> usize {
         (limit - 1, limit - 1),
         limit,
     );
-
     cost
 }
 
