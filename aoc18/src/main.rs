@@ -1,6 +1,4 @@
-extern crate fxhash;
-use fxhash::FxHashMap;
-use fxhash::FxHashSet;
+use std::cmp::Reverse;
 use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -28,18 +26,16 @@ fn parse_input(input: &Vec<String>) -> Vec<(usize, usize)> {
 fn next_points(
     map: &Vec<(usize, usize)>,
     point: (usize, usize),
-    cost: usize,
     limit: usize,
-) -> Vec<(usize, usize, usize)> {
-    let mut neighbours: Vec<(usize, usize, usize)> = Vec::new();
+) -> Vec<(usize, usize)> {
+    let mut neighbours: Vec<(usize, usize)> = Vec::new();
     let ops = [(0, 1), (1, 0), (0, -1), (-1, 0)];
     for op in ops {
         let next_y = point.0 as isize + op.0;
         let next_x = point.1 as isize + op.1;
-        let next_cost = cost + 1;
         if next_y >= 0 && next_x >= 0 && next_y < limit as isize && next_x < limit as isize {
             if !map.contains(&(next_y as usize, next_x as usize)) {
-                neighbours.push((next_y as usize, next_x as usize, next_cost))
+                neighbours.push((next_y as usize, next_x as usize))
             }
         }
     }
@@ -52,41 +48,28 @@ fn find_shortest(
     end: (usize, usize),
     limit: usize,
 ) -> usize {
-    let mut visited: FxHashSet<(usize, usize)> = FxHashSet::default();
-    let mut distances: FxHashMap<(usize, usize), usize> = FxHashMap::default();
-    distances.insert(start, 0);
-    let mut queue = Vec::new();
-    let start = start.clone();
-    queue.push((start.0, start.1, 0));
+    let mut q = std::collections::BinaryHeap::new();
+    let mut processed = vec![false; limit * limit];
+    let mut distance = vec![usize::MAX; limit * limit];
+    let start = start.0 * limit + start.1;
+    let end = end.0 * limit + end.1;
+    distance[start] = 0;
+    q.push((Reverse(0), start));
 
-    while !queue.is_empty() {
-        queue.sort_by(|a, b| a.2.cmp(&b.2));
-        queue.reverse();
-        let (point_y, point_x, cost) = queue.pop().unwrap();
-
-        if point_y == end.0 && point_x == end.1 {
-            return cost;
-        }
-
-        if visited.contains(&(point_y, point_x)) {
+    while !q.is_empty() {
+        let a = q.pop().unwrap().1;
+        if processed[a] {
             continue;
         }
-        visited.insert((point_y, point_x));
-
-        for (next_point_y, next_point_x, next_cost) in
-            next_points(map, (point_y, point_x), cost, limit)
-        {
-            match distances.get_mut(&(next_point_y, next_point_x)) {
-                Some(stored_cost) => {
-                    if *stored_cost > next_cost {
-                        *stored_cost = next_cost;
-                        queue.push((next_point_y, next_point_x, next_cost));
-                    }
-                }
-                None => {
-                    distances.insert((next_point_y, next_point_x), next_cost);
-                    queue.push((next_point_y, next_point_x, next_cost));
-                }
+        if a == end {
+            return distance[end];
+        }
+        processed[a] = true;
+        for (next_point_y, next_point_x) in next_points(map, (a / limit, a % limit), limit) {
+            let next_index = next_point_y * limit + next_point_x;
+            if (distance[a] + 1) < distance[next_index] {
+                distance[next_index] = distance[a] + 1;
+                q.push((Reverse(distance[next_index]), next_index));
             }
         }
     }
@@ -107,15 +90,26 @@ fn solve_part_a(input: &Vec<String>, limit: usize, bytes: usize) -> usize {
 
 fn solve_part_b(input: &Vec<String>, limit: usize) -> String {
     let map = parse_input(input);
-
-    for i in 0..map.len() - 1 {
-        let cost = find_shortest(&map[..i].to_vec(), (0, 0), (limit - 1, limit - 1), limit);
-        if cost == 0 {
-            return map[i - 1].0.to_string() + "," + &map[i - 1].1.to_string();
+    let mut mid = map.len() / 2;
+    let mut offset = map.len() / 4;
+    loop {
+        let cost = find_shortest(&map[..mid].to_vec(), (0, 0), (limit - 1, limit - 1), limit);
+        if cost > 0 {
+            if offset == 0 {
+                offset = 1;
+            }
+            mid = mid + offset;
+            offset = offset / 2;
+        } else if cost == 0 {
+            if offset == 0 {
+                break;
+            }
+            mid = mid - offset;
+            offset = offset / 2;
         }
     }
 
-    String::new()
+    return map[mid - 1].0.to_string() + "," + &map[mid - 1].1.to_string();
 }
 
 fn main() {
