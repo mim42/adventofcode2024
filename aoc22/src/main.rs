@@ -1,7 +1,5 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::read_to_string,
-};
+use fxhash::{FxHashMap, FxHashSet};
+use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
     let mut result = Vec::new();
@@ -47,9 +45,9 @@ fn solve_part_a(input: &Vec<String>) -> usize {
 }
 
 fn solve_part_b(input: &Vec<String>) -> usize {
-    let mut bananas: HashMap<[i64; 4], usize> = HashMap::new();
+    let mut bananas: FxHashMap<[i64; 4], usize> = FxHashMap::default();
     for num in parse_input(input) {
-        let mut first_time: HashSet<[i64; 4]> = HashSet::new();
+        let mut first_time: FxHashSet<[i64; 4]> = FxHashSet::default();
         let all_secret_numbers = all_secret_number_generator(num, 2000);
         for window in all_secret_numbers.windows(5) {
             let p1 = window[1] as i64 - window[0] as i64;
