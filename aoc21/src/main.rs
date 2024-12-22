@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     fs::read_to_string,
+    usize,
 };
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -172,37 +173,83 @@ fn remote_on_keypad(keypad: &Vec<Vec<String>>, code: String) -> Vec<String> {
     remote_commands
 }
 
-fn heuristic(a: &String) -> usize {
-    let mut counter = 0;
-    let mut prev_char = '_';
-    for i in a.chars() {
-        if i == prev_char {
-            counter += 1;
-        } else {
-            prev_char = i;
-        }
-    }
-    counter
-}
+// fn heuristic(a: &String) -> usize {
+//     let mut counter = 0;
+//     let mut prev_char = '_';
+//     for i in a.chars() {
+//         if i == prev_char {
+//             counter += 1;
+//         } else {
+//             prev_char = i;
+//         }
+//     }
+//     counter + 100 - a.len() * 3 as usize
+// }
 
-fn remote_on_remote(remote: &Vec<Vec<String>>, remote_command: String) -> Vec<String> {
-    let mut remote_commands = vec!["".to_string()];
-    let mut pointin_button = "A".to_string();
-    for button in remote_command.chars() {
-        let mut temp = Vec::new();
-        for path in find_all_remote_paths(remote, pointin_button.to_string(), button.to_string()) {
-            for command in &remote_commands {
-                temp.push(command.clone() + &path);
-            }
-        }
-        remote_commands = temp;
-        pointin_button = button.to_string();
+fn remote_on_remote(
+    remote: &Vec<Vec<String>>,
+    cache: &mut HashMap<(String, usize), usize>,
+    memory: &mut HashMap<String, Vec<String>>,
+    remote_counter: HashMap<String, usize>,
+    depth: usize,
+) -> usize {
+    if depth == 0 {
+        return remote_counter
+            .iter()
+            .map(|(code, counter)| code.len() * counter)
+            .sum();
     }
-    let best_guess = remote_commands
-        .iter()
-        .max_by(|a, b| heuristic(*a).cmp(&heuristic(*b)))
-        .unwrap();
-    vec![best_guess.to_string()]
+    let mut true_length = 0;
+    for (code, counter) in remote_counter {
+        let mut possible_codes = Vec::new();
+        let mut min_length = usize::MAX;
+        if !cache.contains_key(&(code.clone(), depth)) {
+            let mut remote_commands = vec!["".to_string()];
+            let mut pointin_button = "A".to_string();
+
+            for button in code.chars() {
+                let mut temp = Vec::new();
+                for path in
+                    find_all_remote_paths(remote, pointin_button.to_string(), button.to_string())
+                {
+                    for command in &remote_commands {
+                        temp.push(command.clone() + &path);
+                    }
+                }
+                remote_commands = temp;
+                pointin_button = button.to_string();
+            }
+
+            possible_codes = remote_commands.clone();
+
+            for possible_code in possible_codes {
+                let mut commands_counter: HashMap<String, usize> = HashMap::new();
+                let splited = possible_code
+                    .split_inclusive("A")
+                    .map(|c| c.to_string())
+                    .collect::<Vec<String>>();
+                for sub_codes in splited {
+                    commands_counter
+                        .entry(sub_codes)
+                        .and_modify(|c| *c += counter)
+                        .or_insert(counter);
+                }
+                let length =
+                    remote_on_remote(remote, cache, memory, commands_counter.clone(), depth - 1);
+                if length <= min_length {
+                    min_length = length;
+                }
+            }
+            cache.insert((code.clone(), depth), min_length / counter);
+        } else {
+            min_length = *cache.get(&(code, depth)).unwrap() * counter;
+            println!("works")
+        }
+
+        true_length += min_length
+    }
+
+    true_length
 }
 
 fn solve_part_a(input: &Vec<String>) -> usize {
@@ -220,29 +267,39 @@ fn solve_part_a(input: &Vec<String>) -> usize {
         .iter()
         .map(|row| row.iter().map(|c| c.to_string()).collect::<Vec<String>>())
         .collect::<Vec<Vec<String>>>();
-    let mut answer = 0;
 
+    let mut answer = 0;
     for code in input {
-        let possible = remote_on_keypad(&keypad, code.clone());
-        let mut solutions = Vec::new();
-        for remote_command in possible {
-            let possible_remotes = remote_on_remote(&remote, remote_command);
-            for i in possible_remotes {
-                let codes = remote_on_remote(&remote, i);
-                let min = codes.iter().min_by(|a, b| a.len().cmp(&b.len())).unwrap();
-                solutions.push(min.clone());
-            }
-        }
-        let min = solutions
+        let first_codes = remote_on_keypad(&keypad, code.clone());
+
+        let final_code = first_codes
             .iter()
-            .min_by(|a, b| a.len().cmp(&b.len()))
+            .map(|code| {
+                let mut cache: HashMap<(String, usize), usize> = HashMap::new();
+                let mut commands_counter: HashMap<String, usize> = HashMap::new();
+                let mut memory: HashMap<String, Vec<String>> = HashMap::new();
+                let splited = code
+                    .split_inclusive("A")
+                    .map(|c| c.to_string())
+                    .collect::<Vec<String>>();
+
+                for sub_codes in splited {
+                    commands_counter
+                        .entry(sub_codes)
+                        .and_modify(|c| *c += 1)
+                        .or_insert(1);
+                }
+                remote_on_remote(&remote, &mut cache, &mut memory, commands_counter, 25)
+            })
+            .min_by(|a, b| a.cmp(&b))
             .unwrap();
+
         answer += code
             .trim_start_matches('0')
             .trim_end_matches('A')
             .parse::<usize>()
             .unwrap()
-            * min.len();
+            * final_code;
     }
     answer
 }
