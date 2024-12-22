@@ -18,9 +18,9 @@ fn parse_input(input: &Vec<String>) -> Vec<usize> {
 
 fn secret_number_generator(mut num: usize, iterations: usize) -> usize {
     for _ in 0..iterations {
-        num = (num ^ (num * 64)) % 16777216;
-        num = (num ^ (num / 32)) % 16777216;
-        num = (num ^ (num * 2048)) % 16777216;
+        num = (num ^ (num << 6)) % 16777216;
+        num = (num ^ (num >> 5)) % 16777216;
+        num = (num ^ (num << 11)) % 16777216;
     }
     num
 }
@@ -28,9 +28,9 @@ fn secret_number_generator(mut num: usize, iterations: usize) -> usize {
 fn all_secret_number_generator(mut num: usize, iterations: usize) -> Vec<usize> {
     let mut all_secret_numbers = vec![num % 10];
     for _ in 0..iterations {
-        num = (num ^ (num * 64)) % 16777216;
-        num = (num ^ (num / 32)) % 16777216;
-        num = (num ^ (num * 2048)) % 16777216;
+        num = (num ^ (num << 6)) % 16777216;
+        num = (num ^ (num >> 5)) % 16777216;
+        num = (num ^ (num << 11)) % 16777216;
         all_secret_numbers.push(num % 10);
     }
     all_secret_numbers
