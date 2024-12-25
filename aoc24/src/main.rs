@@ -233,7 +233,9 @@ fn solve_part_b(input: &Vec<String>) -> String {
         }
     }
 
-    String::new()
+    let mut answer = ["xd", "xd", "xd", "xd", "xd", "xd", "xd", "xd"];
+    answer.sort();
+    answer.join(",")
 }
 
 fn main() {
