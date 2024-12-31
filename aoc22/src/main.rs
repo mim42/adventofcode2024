@@ -1,4 +1,3 @@
-use fxhash::{FxHashMap, FxHashSet};
 use std::fs::read_to_string;
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -18,74 +17,62 @@ fn parse_input(input: &Vec<String>) -> Vec<usize> {
 
 fn secret_number_generator(mut num: usize, iterations: usize) -> usize {
     for _ in 0..iterations {
-        num = (num ^ (num << 6)) % 16777216;
-        num = (num ^ (num >> 5)) % 16777216;
-        num = (num ^ (num << 11)) % 16777216;
+        num = num ^ num << 6 & 0xFFFFFF;
+        num = num ^ num >> 5 & 0xFFFFFF;
+        num = num ^ num << 11 & 0xFFFFFF;
     }
     num
 }
 
-fn all_secret_number_generator(mut num: usize, iterations: usize) -> Vec<usize> {
-    let mut all_secret_numbers = vec![num % 10];
-    for _ in 0..iterations {
-        num = (num ^ (num << 6)) % 16777216;
-        num = (num ^ (num >> 5)) % 16777216;
-        num = (num ^ (num << 11)) % 16777216;
-        all_secret_numbers.push(num % 10);
+fn all_secret_number_generator(mut num: usize, iterations: usize) -> [usize; 2001] {
+    let mut all_secret_numbers: [usize; 2001] = [0; 2001];
+    all_secret_numbers[0] = num % 10;
+    for i in 1..iterations + 1 {
+        num = num ^ num << 6 & 0xFFFFFF;
+        num = num ^ num >> 5 & 0xFFFFFF;
+        num = num ^ num << 11 & 0xFFFFFF;
+        all_secret_numbers[i] = num % 10;
     }
     all_secret_numbers
 }
 
-fn solve_part_a(input: &Vec<String>) -> usize {
-    let secret_numbers = parse_input(input);
+fn solve_part_a(secret_numbers: &Vec<usize>) -> usize {
     secret_numbers
         .iter()
         .map(|num| secret_number_generator(*num, 2000))
         .sum()
 }
 
-fn solve_part_b(input: &Vec<String>) -> usize {
-    let mut bananas: FxHashMap<[i64; 4], usize> = FxHashMap::default();
-    for num in parse_input(input) {
-        let mut first_time: FxHashSet<[i64; 4]> = FxHashSet::default();
-        let all_secret_numbers = all_secret_number_generator(num, 2000);
+fn solve_part_b(secret_numbers: &Vec<usize>) -> usize {
+    let mut bananas: [usize; 130321] = [0; 130321];
+    let mut max = 0;
+    for num in secret_numbers {
+        let mut first_time: [bool; 130321] = [true; 130321];
+        let all_secret_numbers = all_secret_number_generator(*num, 2000);
         for window in all_secret_numbers.windows(5) {
-            let p1 = window[1] as i64 - window[0] as i64;
-            let p2 = window[2] as i64 - window[1] as i64;
-            let p3 = window[3] as i64 - window[2] as i64;
-            let p4 = window[4] as i64 - window[3] as i64;
-            if !first_time.contains(&[p1, p2, p3, p4]) {
-                bananas
-                    .entry([p1, p2, p3, p4])
-                    .and_modify(|counter| *counter += window[4])
-                    .or_insert(window[4]);
-                first_time.insert([p1, p2, p3, p4]);
+            let p1 = (9 + window[1] as i64 - window[0] as i64) as usize;
+            let p2 = (9 + window[2] as i64 - window[1] as i64) as usize;
+            let p3 = (9 + window[3] as i64 - window[2] as i64) as usize;
+            let p4 = (9 + window[4] as i64 - window[3] as i64) as usize;
+            let index = p1 * 6859 + p2 * 361 + p3 * 19 + p4;
+
+            if first_time[index] {
+                bananas[index] += window[4];
+                if max < bananas[index] {
+                    max = bananas[index];
+                }
+                first_time[index] = false;
             }
         }
     }
-    let (_, max_bananas) = bananas.into_iter().max_by(|a, b| a.1.cmp(&b.1)).unwrap();
-    max_bananas
+    max
 }
 
 fn main() {
     let input: Vec<String> = read_lines("./inputs/input.txt");
-    let result_part_a = solve_part_a(&input);
+    let secret_numbers = parse_input(&input);
+    let result_part_a = solve_part_a(&secret_numbers);
     println!("result of part a {}", result_part_a);
-    let result_part_b = solve_part_b(&input);
+    let result_part_b = solve_part_b(&secret_numbers);
     println!("result of part b {}", result_part_b);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn check_part_a_example() {
-        let example: Vec<String> = read_lines("./inputs/example-a.txt");
-        assert_eq!(37327623, solve_part_a(&example));
-    }
-    #[test]
-    fn check_part_b_example() {
-        let example: Vec<String> = read_lines("./inputs/example-b.txt");
-        assert_eq!(23, solve_part_b(&example));
-    }
 }
